@@ -16,6 +16,7 @@ Lokal, skrivebeskyttet MCP-server for Claude Desktop og Claude Code. Hver bruker
 ## Hva piloten kan gjøre
 
 - Lese foretak, kontoplan, saldoer, kontakter, fakturaer, kjøp, salg og journalposter.
+- Lese vedlegg på journalposter, for eksempel mellombalanse bak inngående balanse.
 - Lese innboksbilag som PDF, PNG og JPEG; PDF kan leses som tekst eller sidebilder for skannede bilag. Maks 15 MiB per svar.
 - Lese strukturerte EHF-fakturaer og kreditnotaer.
 - Gi Claude en arbeidsflyt for full kontering med kostnad/eiendel, mva og motkonto, bilagsreferanser, begrunnelse og åpne spørsmål.

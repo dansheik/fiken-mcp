@@ -345,6 +345,22 @@ def fiken_read_purchase_attachment(company_slug: str, purchase_id: int, attachme
 
 
 @mcp.tool(annotations=READ_ONLY)
+def fiken_get_journal_entry(company_slug: str, journal_entry_id: int) -> Any:
+    """Les én journalpost med linjer og vedlegg. Bruk uuid med fiken_read_journal_entry_attachment."""
+    return _request(_company_path(company_slug, f'journalEntries/{_positive_id(journal_entry_id)}'))
+
+
+@mcp.tool(annotations=READ_ONLY)
+def fiken_read_journal_entry_attachment(company_slug: str, journal_entry_id: int, attachment_uuid: str, page: int = 1, as_image: bool = False) -> Any:
+    """Les PDF/bilde fra en journalpost, f.eks. inngående balanse. Lenken hentes fra Fiken, ikke fra modellen."""
+    entry = fiken_get_journal_entry(company_slug, journal_entry_id)
+    attachment = next((a for a in entry.get('attachments') or [] if a.get('uuid') == attachment_uuid), None)
+    if not attachment or not attachment.get('downloadUrl'):
+        raise FikenError('Vedlegget finnes ikke på denne journalposten eller mangler nedlastingslenke.')
+    return _read_document_url(attachment['downloadUrl'], f'journal:{journal_entry_id}/attachment:{attachment_uuid}', page, as_image)
+
+
+@mcp.tool(annotations=READ_ONLY)
 def fiken_list_purchase_drafts(company_slug: str, page: int = 0, page_size: int = 100) -> Any:
     """Les eksisterende kjøpsutkast. Oppretter eller endrer ingenting."""
     return _request(_company_path(company_slug, 'purchases/drafts'), _page_params(page, page_size, {}))

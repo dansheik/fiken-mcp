@@ -1,5 +1,9 @@
 # Endringslogg
 
+## Uutgitt
+
+- Lagt til `fiken_get_journal_entry` og `fiken_read_journal_entry_attachment` for å lese journalposter og vedlegg, f.eks. mellombalanse ved inngående balanse.
+
 ## 0.3.0 – 2026-10-28
 
 - Rettet manglende obligatorisk dato for kontosaldoer.

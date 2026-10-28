@@ -10,7 +10,7 @@ def test_real_stdio_handshake():
             async with ClientSession(reader, writer) as session:
                 await session.initialize()
                 tools = (await session.list_tools()).tools
-                assert len(tools) == 27
+                assert len(tools) == 29
                 assert all(t.annotations.readOnlyHint for t in tools)
                 assert 'fiken_read_document' in {t.name for t in tools}
                 assert 'fiken_find_duplicate_purchases' in {t.name for t in tools}

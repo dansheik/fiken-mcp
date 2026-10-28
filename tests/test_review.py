@@ -134,6 +134,18 @@ def test_attachment_source_preserved(monkeypatch):
     assert server.fiken_read_purchase_attachment('example', 1, 'real', page=2) == {'source': 'purchase:1/attachment:real', 'page': 2}
 
 
+def test_journal_attachment_must_belong_to_entry(monkeypatch):
+    monkeypatch.setattr(server, 'fiken_get_journal_entry', lambda *a: {'attachments': [{'uuid': 'real', 'downloadUrl': 'https://fiken.no/test'}]})
+    with pytest.raises(FikenError):
+        server.fiken_read_journal_entry_attachment('example', 1, 'other')
+
+
+def test_journal_attachment_source_preserved(monkeypatch):
+    monkeypatch.setattr(server, 'fiken_get_journal_entry', lambda *a: {'attachments': [{'uuid': 'real', 'downloadUrl': 'https://fiken.no/test'}]})
+    monkeypatch.setattr(server, '_read_document_url', lambda url, source, page, as_image: {'source': source, 'page': page})
+    assert server.fiken_read_journal_entry_attachment('example', 7, 'real', page=2) == {'source': 'journal:7/attachment:real', 'page': 2}
+
+
 def test_complete_review_runs_duplicate_search(monkeypatch):
     def request(path, params):
         if path.endswith('/accounts'):
