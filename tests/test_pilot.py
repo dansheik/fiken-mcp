@@ -84,14 +84,14 @@ def proposal():
 
 
 def test_balanced_proposal_remains_draft():
-    result = server.fiken_validate_posting_proposal(server.PostingProposal(**proposal()))
+    result = server.fiken_validate_posting_proposal(server.PostingProposal(**proposal()), check_fiken=False)
     assert result['arithmetic_valid']
     assert not result['accounting_validated'] and not result['written_to_fiken']
 
 
 def test_unbalanced_proposal():
     data = proposal(); data['lines'][0]['debit_ore'] = 9999
-    assert not server.fiken_validate_posting_proposal(server.PostingProposal(**data))['arithmetic_valid']
+    assert not server.fiken_validate_posting_proposal(server.PostingProposal(**data), check_fiken=False)['arithmetic_valid']
 
 
 def test_fractional_money_rejected():

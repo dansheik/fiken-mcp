@@ -1,6 +1,6 @@
 [project]
 name = "fiken-mcp"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local read-only Fiken MCP for Claude on macOS, with OAuth PKCE"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,7 +21,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["server", "auth", "client"]
+py-modules = ["server", "auth", "client", "setup_cli"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
