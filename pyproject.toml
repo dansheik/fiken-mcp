@@ -1,0 +1,27 @@
+[project]
+name = "fiken-mcp"
+version = "0.2.0"
+description = "Local read-only Fiken MCP for Claude on macOS, with OAuth PKCE"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = ["mcp>=1.28,<2", "httpx>=0.28,<1", "keyring>=25,<26", "pypdf>=6,<7", "pypdfium2>=4.30,<5", "Pillow>=11,<13"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+fiken-mcp = "server:main"
+
+[project.urls]
+Repository = "https://github.com/dansheik/fiken-mcp"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["server", "auth", "client"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
