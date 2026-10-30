@@ -8,5 +8,5 @@ For vulnerabilities, use GitHub private vulnerability reporting when enabled.
 If unavailable, open an issue requesting a private reporting channel without
 including exploit details, tokens or accounting data.
 
-Supported release: 0.3.x pilot. OAuth uses macOS Keychain; no plaintext fallback.
+Supported release: 0.3.x pilot. OAuth uses macOS Keychain or Windows Credential Manager; no plaintext fallback.
 Local logout does not revoke Fiken consent. Revoke the app in Fiken as well.

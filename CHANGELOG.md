@@ -1,6 +1,10 @@
 # Endringslogg
 
-## Uutgitt
+## 0.3.1 – 2026-10-30
+
+- Windows-støtte med Credential Manager, plattformuavhengig prosesslås og riktig `.exe` i Claude-konfigurasjon.
+- PowerShell-instruksjoner og forklaring av lokal HTTP-redirect for offentlige PKCE-apper.
+- Testmatrise på macOS og Windows.
 
 - Lagt til `fiken_get_journal_entry` og `fiken_read_journal_entry_attachment` for å lese journalposter og vedlegg, f.eks. mellombalanse ved inngående balanse.
 

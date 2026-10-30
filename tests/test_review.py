@@ -161,7 +161,8 @@ def test_complete_review_runs_duplicate_search(monkeypatch):
 
 def test_config_contains_no_tokens(monkeypatch, tmp_path):
     import setup_cli
-    executable = tmp_path / 'fiken-mcp'; executable.touch()
+    import sys
+    executable = tmp_path / ('fiken-mcp.exe' if sys.platform == 'win32' else 'fiken-mcp'); executable.touch()
     monkeypatch.setattr(setup_cli.sys, 'executable', str(tmp_path / 'python'))
     monkeypatch.setenv('FIKEN_CLIENT_ID', 'public-client')
     result = setup_cli.claude_config()['mcpServers']['fiken']

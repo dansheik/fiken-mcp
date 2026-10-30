@@ -439,7 +439,7 @@ def fiken_find_duplicate_purchases(company_slug: str, supplier_id: int, invoice_
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description='Fiken MCP – lokal, skrivebeskyttet pilot for Mac')
+    parser = argparse.ArgumentParser(description='Fiken MCP – lokal, skrivebeskyttet pilot for Mac og Windows')
     parser.add_argument('command', choices=['serve', 'login', 'logout', 'config', 'doctor'], nargs='?', default='serve')
     args = parser.parse_args()
     try:

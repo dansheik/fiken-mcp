@@ -6,7 +6,7 @@ from auth import client_id, FikenError
 
 
 def claude_config():
-    executable = Path(sys.executable).parent / 'fiken-mcp'
+    executable = Path(sys.executable).parent / ('fiken-mcp.exe' if sys.platform == 'win32' else 'fiken-mcp')
     if not executable.is_file():
         raise FikenError('Installer pakken først med python -m pip install .')
     return {'mcpServers': {'fiken': {'command': str(executable), 'args': ['serve'],
@@ -14,8 +14,8 @@ def claude_config():
 
 
 def doctor():
-    if sys.platform != 'darwin':
-        raise FikenError('Denne piloten krever macOS.')
+    if sys.platform not in {'darwin', 'win32'}:
+        raise FikenError('Denne piloten krever macOS eller Windows.')
     client_id()
     from client import get
     # Uses the same refresh, keychain and read-only transport as Claude.

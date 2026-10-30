@@ -1,8 +1,14 @@
-# Fiken MCP for Claude på Mac
+# Fiken MCP for Claude på Mac og Windows
 
-Lokal, skrivebeskyttet MCP-server for Claude Desktop og Claude Code. Hver bruker logger inn med sin egen Fiken-konto gjennom **OAuth 2.0 med PKCE (S256)**. Tokens lagres i macOS Nøkkelring.
+Lokal, skrivebeskyttet MCP-server for Claude Desktop og Claude Code. Hver bruker logger inn med sin egen Fiken-konto gjennom **OAuth 2.0 med PKCE (S256)**. Tokens lagres i macOS Nøkkelring eller Windows Credential Manager.
 
 **Pilot:** les bilag og få forslag til full kontering. Claude tolker bilaget og foreslår kontoer og mva; serveren gir datagrunnlag og kontrollerer regnestykket. Ingenting bokføres, endres, slettes eller sendes i Fiken. Ikke en offisiell Fiken-integrasjon.
+
+## Nytt i 0.3.1
+
+- Windows-støtte med sikker tokenlagring i Credential Manager.
+- Fillås på tvers av prosesser fungerer på både Mac og Windows.
+- Claude-konfigurasjon velger riktig `.exe` på Windows.
 
 ## Nytt i 0.3
 
@@ -34,9 +40,27 @@ Repoeier registrerer en offentlig app i Fiken og deler dens **Client ID** med pi
 
 Brukere må ha Fiken API-tilgang til foretakene sine. Fiken dokumenterer inntil fem brukere i utviklingsfasen, og krever 2–3 reelle pilotbrukere før søknad om produksjonstilgang. Se [Fikens API-dokumentasjon](https://api.fiken.no/api/v2/docs/) for gjeldende vilkår og appregistrering.
 
+### Hvis Fiken krever HTTPS i redirect-feltet
+
+Den offentlige [Fiken-dokumentasjonen](https://api.fiken.no/api/v2/docs/) sier at
+**offentlige PKCE-klienter** kan registrere en lokal loopback-redirect. Appen må
+opprettes med **Avanserte innstillinger → Uten client secret (PKCE)**. Dette valget
+kan ifølge Fiken bare gjøres ved opprettelse. Har appen en klienthemmelighet,
+opprett en ny offentlig PKCE-app og bruk den nye Client ID-en.
+
+Denne serveren bruker nøyaktig `http://127.0.0.1:8765/callback`. Ikke endre bare
+prefikset til `https`: callback-serveren tilbyr HTTP og har ikke et TLS-sertifikat.
+En tilfeldig HTTPS-nettside vil heller ikke sende innloggingen tilbake til denne
+lokale serveren. Hvis en ny offentlig PKCE-app fortsatt avviser loopback-adressen,
+må registreringen avklares med Fiken; HTTPS krever et annet callback-oppsett enn
+det denne piloten implementerer.
+
 ## 2. Installer lokalt
 
-Krever macOS, Git og Python 3.11 eller nyere. Har du Homebrew, kan Python installeres med `brew install python@3.12`.
+Krever macOS eller Windows, Git og Python 3.11 eller nyere.
+
+### Mac
+ Har du Homebrew, kan Python installeres med `brew install python@3.12`.
 
 ```bash
 git clone https://github.com/dansheik/fiken-mcp.git
@@ -46,6 +70,27 @@ python3.12 -m venv .venv
 export FIKEN_CLIENT_ID='DIN_OFFENTLIGE_CLIENT_ID'
 .venv/bin/fiken-mcp login
 ```
+
+### Windows (PowerShell)
+
+Åpne PowerShell i mappen der prosjektet skal klones. Har du allerede klonet, gå inn
+på prosjektmappen og kjør `git pull --ff-only` før installasjonen.
+
+```powershell
+git clone https://github.com/dansheik/fiken-mcp.git
+cd fiken-mcp
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install .
+$env:FIKEN_CLIENT_ID = 'DIN_OFFENTLIGE_CLIENT_ID'
+.\.venv\Scripts\fiken-mcp.exe login
+.\.venv\Scripts\fiken-mcp.exe doctor
+.\.venv\Scripts\fiken-mcp.exe config
+```
+
+Bruk en installert Python-versjon 3.11 eller nyere hvis `py -3.12` ikke finnes.
+Ingen aktivering av miljøet eller endring av PowerShell execution policy trengs.
+Windows-tokenet lagres i Credential Manager. Låsefilen (uten tokens) ligger i
+`%LOCALAPPDATA%\fiken-mcp`.
 
 Innloggingen åpner nettleseren. Velg hvilke foretak appen skal få tilgang til. Callback-serveren lytter bare på `127.0.0.1:8765` under innlogging, og venter i inntil tre minutter. Nøkkelring kan be om lokal tilgang. Ingen token skal kopieres til Claude-konfigurasjonen.
 
@@ -60,7 +105,9 @@ Etter innlogging kan du kontrollere tilgangen og få ferdig konfigurasjon med ri
 
 ## 3. Koble til Claude Desktop
 
-Åpne **Settings → Developer → Edit Config**. Konfigurasjonsfilen på Mac heter `~/Library/Application Support/Claude/claude_desktop_config.json`.
+Åpne **Settings → Developer → Edit Config**. Konfigurasjonsfilen på Mac heter `~/Library/Application Support/Claude/claude_desktop_config.json`. På Windows ligger den i `%APPDATA%\Claude\claude_desktop_config.json`.
+
+På Windows: bruk JSON fra `.\.venv\Scripts\fiken-mcp.exe config`; den setter korrekt absolutt sti og JSON-escaping for Windows.
 
 Legg til `fiken` i eksisterende `mcpServers`, og behold eventuelle andre servere. Bruk den **absolutte** stien til `.venv/bin/fiken-mcp` i klonen din og samme Client ID som ved innlogging:
 
@@ -84,6 +131,12 @@ Fra klonen, etter innlogging:
 
 ```bash
 claude mcp add --scope user --transport stdio --env FIKEN_CLIENT_ID="$FIKEN_CLIENT_ID" fiken -- "$PWD/.venv/bin/fiken-mcp" serve
+```
+
+På Windows PowerShell, fra klonen etter innlogging:
+
+```powershell
+claude mcp add --scope user --transport stdio --env "FIKEN_CLIENT_ID=$env:FIKEN_CLIENT_ID" fiken -- "$PWD\.venv\Scripts\fiken-mcp.exe" serve
 ```
 
 Se [Claude Codes MCP-dokumentasjon](https://code.claude.com/docs/en/mcp).
@@ -119,8 +172,8 @@ OAuth-oppsettet er uendret. **Endret verktøyformat:** paginerte lister returner
 
 ## Personvern og sikkerhetsgrenser
 
-- OAuth er per macOS-bruker og Client ID. Ingen personlig API-token eller client secret brukes.
-- Tilgangs- og refresh-token lagres samlet i Nøkkelring. Rotering og API-kall serialiseres mellom lokale prosesser med fillås. Bytte av Fiken-bruker gjøres med ny `login`.
+- OAuth er per OS-bruker og Client ID. Ingen personlig API-token eller client secret brukes.
+- Tilgangs- og refresh-token lagres samlet i systemets legitimasjonslager. Rotering og API-kall serialiseres mellom lokale prosesser med fillås. Bytte av Fiken-bruker gjøres med ny `login`.
 - Regnskaps-API-et har bare GET-transport. OAuth-tokenutveksling er eneste HTTP POST. Fiken-tillatelsen kan være bredere enn lesetilgangen serveren tilbyr; sperren ligger i denne klienten.
 - Nedlasting godtar bare HTTPS på `fiken.no` og `api.fiken.no`, uten omdirigeringer. Ukjente dokumentverter avvises.
 - Bilag lagres ikke på disk av serveren. Bilag og regnskapsdata som Claude leser sendes til Claude og omfattes av brukerens Claude-avtale. Det er ingen ekstra AI-tjeneste eller analyse-API i denne serveren.
@@ -143,7 +196,7 @@ OAuth-oppsettet er uendret. **Endret verktøyformat:** paginerte lister returner
 .venv/bin/python -m pytest -q
 ```
 
-Tester dekker PKCE, refresh-rotasjon, offentlig OAuth-klient, GET-sperre, omdirigeringer, adresseregler, bilagslesing, datoer, sidegrenser, kontoplan på senere sider, ukjente mva-koder, duplikater og en virkelig MCP-stdio-oppstart. Alle regnskapsscenarier i testene er syntetiske; de dokumenterer ikke kvaliteten på Claudes tolkning av reelle bilag. GitHub Actions kjører på macOS med Python 3.11–3.13.
+Tester dekker PKCE, refresh-rotasjon, offentlig OAuth-klient, GET-sperre, omdirigeringer, adresseregler, bilagslesing, datoer, sidegrenser, kontoplan på senere sider, ukjente mva-koder, duplikater og en virkelig MCP-stdio-oppstart. Alle regnskapsscenarier i testene er syntetiske; de dokumenterer ikke kvaliteten på Claudes tolkning av reelle bilag. GitHub Actions kjører på macOS og Windows med Python 3.11–3.13.
 
 **Gjenstår før reell pilotgodkjenning:** registrer Fiken-appen, prøv innlogging og refresh med en testbruker, kontroller PDF/EHF mot testforetak, og prøv installasjonen i Claude Desktop. Ingen slike live-kontroller er dokumentert som bestått ennå. Repoet er en installerbar pilot, ikke en produksjonsgodkjent integrasjon.
 

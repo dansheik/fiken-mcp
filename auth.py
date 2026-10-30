@@ -1,4 +1,4 @@
-"""Public-client OAuth with S256 PKCE. Credentials live only in macOS Keychain."""
+"""Public-client OAuth with S256 PKCE. Credentials live in macOS Keychain or Windows Credential Manager."""
 from __future__ import annotations
 import base64
 import hashlib
@@ -12,9 +12,8 @@ from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlsplit
-import fcntl
+import portalocker
 import httpx
-from keyring.backends.macOS import Keyring
 
 REDIRECT = 'http://127.0.0.1:8765/callback'
 SERVICE = 'no.fiken.mcp.oauth'
@@ -29,22 +28,36 @@ def client_id():
     return value
 
 def keychain():
-    if sys.platform != 'darwin':
-        raise FikenError('Denne piloten krever macOS og Apple Nøkkelring.')
-    return Keyring()
+    if sys.platform == 'darwin':
+        from keyring.backends.macOS import Keyring
+        return Keyring()
+    if sys.platform == 'win32':
+        from keyring.backends.Windows import WinVaultKeyring
+        return WinVaultKeyring()
+    raise FikenError('Denne piloten krever macOS eller Windows med sikker legitimasjonslagring.')
+
+
+def session_directory():
+    if sys.platform == 'win32':
+        base = Path(os.environ.get('LOCALAPPDATA') or (Path.home() / 'AppData' / 'Local'))
+        return base / 'fiken-mcp'
+    return Path.home() / 'Library' / 'Application Support' / 'fiken-mcp'
+
 
 @contextmanager
 def session_lock():
     """Serialize API calls and rotating refresh tokens across local processes."""
-    root = Path.home() / 'Library' / 'Application Support' / 'fiken-mcp'
+    root = session_directory()
     root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    fd = os.open(root / 'session.lock', os.O_CREAT | os.O_RDWR, 0o600)
+    path = root / 'session.lock'
+    # This file contains no credentials. Tokens live only in the OS vault.
+    fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
+    os.close(fd)
     try:
-        fcntl.flock(fd, fcntl.LOCK_EX)
-        yield
-    finally:
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        os.close(fd)
+        with portalocker.Lock(str(path), mode='a', timeout=60):
+            yield
+    except portalocker.exceptions.LockException:
+        raise FikenError('En annen Fiken-prosess er opptatt. Prøv igjen om litt.') from None
 
 def pkce():
     verifier = secrets.token_urlsafe(64)
@@ -69,7 +82,7 @@ def save(token):
     try:
         keychain().set_password(SERVICE, client_id(), json.dumps(token))
     except Exception:
-        raise FikenError('Kunne ikke lagre i Nøkkelring. Lås opp Nøkkelring og logg inn på nytt.') from None
+        raise FikenError('Kunne ikke lagre i systemets legitimasjonslager. Lås det opp og logg inn på nytt.') from None
 
 def access_token():
     """Caller must hold session_lock for the complete API operation."""
@@ -77,7 +90,7 @@ def access_token():
         raw = keychain().get_password(SERVICE, client_id())
         token = json.loads(raw) if raw else None
     except Exception:
-        raise FikenError('Kunne ikke lese Nøkkelring. Kjør fiken-mcp login.') from None
+        raise FikenError('Kunne ikke lese systemets legitimasjonslager. Kjør fiken-mcp login.') from None
     if not token:
         raise FikenError('Ikke innlogget. Kjør fiken-mcp login i Terminal først.')
     if token['expires_at'] <= time.time() + 120:
@@ -130,7 +143,7 @@ def login():
     with session_lock():
         save(exchange({'grant_type': 'authorization_code', 'code': result['code'],
                        'code_verifier': verifier, 'redirect_uri': REDIRECT, 'state': state}))
-    print('Innlogget. Tilgangen er lagret i macOS Nøkkelring.', file=sys.stderr)
+    print('Innlogget. Tilgangen er lagret sikkert i systemets legitimasjonslager.', file=sys.stderr)
 
 def logout():
     with session_lock():

@@ -26,7 +26,7 @@ def get(path: str, params=None, *, binary=False):
                 with client.stream('GET', url, params=clean, headers={
                     'Authorization': 'Bearer ' + access_token(),
                     'Accept': '*/*' if binary else 'application/json',
-                    'User-Agent': 'fiken-mcp/0.3.0'}) as response:
+                    'User-Agent': 'fiken-mcp/0.3.1'}) as response:
                     if response.status_code != 200:
                         raise FikenError(f'Fiken svarte med HTTP {response.status_code}. Kontroller tilgang; ved 401, logg inn på nytt.')
                     chunks = bytearray()
