@@ -120,6 +120,8 @@ export FIKEN_CLIENT_ID='DIN_OFFENTLIGE_CLIENT_ID'
 
 ### Windows (PowerShell)
 
+**Ikke-tekniske brukere:** følg den enkle trinnvise veiledningen i [WINDOWS.md](WINDOWS.md).
+
 Åpne PowerShell i mappen der prosjektet skal klones. Har du allerede klonet, gå inn
 på prosjektmappen og kjør `git pull --ff-only` før installasjonen.
 
