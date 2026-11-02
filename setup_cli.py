@@ -18,7 +18,7 @@ def doctor():
         raise FikenError('Denne piloten krever macOS eller Windows.')
     client_id()
     from client import get
-    # Uses the same refresh, keychain and read-only transport as Claude.
+    # Uses the same refresh, keychain and GET transport as Claude.
     result = get('companies', {'page': 0, 'pageSize': 1})
     count = result['pagination']['result_count']
     return {'status': 'ok', 'oauth_and_api': 'ok', 'accessible_company_count': count,

@@ -1,8 +1,17 @@
 # Fiken MCP for Claude på Mac og Windows
 
-Lokal, skrivebeskyttet MCP-server for Claude Desktop og Claude Code. Hver bruker logger inn med sin egen Fiken-konto gjennom **OAuth 2.0 med PKCE (S256)**. Tokens lagres i macOS Nøkkelring eller Windows Credential Manager.
+Lokal MCP-server for Claude Desktop og Claude Code som leser regnskapet og kan lagre **kjøps- og salgsutkast**, men aldri bokføre. Hver bruker logger inn med sin egen Fiken-konto gjennom **OAuth 2.0 med PKCE (S256)**. Tokens lagres i macOS Nøkkelring eller Windows Credential Manager.
 
-**Pilot:** les bilag og få forslag til full kontering. Claude tolker bilaget og foreslår kontoer og mva; serveren gir datagrunnlag og kontrollerer regnestykket. Ingenting bokføres, endres, slettes eller sendes i Fiken. Ikke en offisiell Fiken-integrasjon.
+**Pilot:** les bilag, få forslag til full kontering og få forslaget lagret som utkast i Fiken. Claude tolker bilaget og foreslår kontoer og mva; serveren gir datagrunnlag, kontrollerer regnestykket og lagrer utkastet. Du kontrollerer og bokfører selv i Fiken. Ingenting bokføres av serveren. Ikke en offisiell Fiken-integrasjon.
+
+## Nytt i 0.4
+
+- **Kjøps- og salgsutkast.** `fiken_create_purchase_draft` og `fiken_create_sale_draft` lagrer forslaget som utkast i Fiken, tilsvarende «Nytt kjøp» → lagre som utkast. Bilaget fra innboksen legges ved med `inbox_document_id`.
+- `fiken_update_*_draft`, `fiken_delete_*_draft`, `fiken_attach_inbox_document_to_draft`, `fiken_list_sale_drafts` og `fiken_get_sale_draft`.
+- **Bokføring er sperret i koden.** Skrivetransporten godtar bare `…/purchases/drafts` og `…/sales/drafts`. `createPurchase`/`createSale` og alle andre skrivestier avvises før noe sendes.
+- Før lagring kontrolleres det at summen av linjene er lik bilagets total, at linjer uten mva har brutto lik netto, at betalinger stemmer, og at det ikke finnes utkast eller bokført kjøp med samme fakturanummer eller samme beløp og dato.
+- Claude får beskjed om å bruke disse verktøyene i stedet for nettleseren når du ber om utkast i Fiken.
+- `FIKEN_READ_ONLY=1` skjuler alle skriveverktøy.
 
 ## Nytt i 0.3.1
 
@@ -27,6 +36,44 @@ Lokal, skrivebeskyttet MCP-server for Claude Desktop og Claude Code. Hver bruker
 - Lese strukturerte EHF-fakturaer og kreditnotaer.
 - Gi Claude en arbeidsflyt for full kontering med kostnad/eiendel, mva og motkonto, bilagsreferanser, begrunnelse og åpne spørsmål.
 - Kontrollere debet/kredit og bruttobeløp for enkle NOK-bilag, at kontoene finnes i foretakets nåværende kontoplan og at numeriske kjøps-mvakoder er gjenkjent. Dette bekrefter ikke skattebehandling eller riktig kontovalg. Mer kompliserte bilag, kreditnota og valuta må vurderes separat.
+
+## Utkast i Fiken (kjøp og salg)
+
+Si for eksempel: «Lag kjøpsutkast i Fiken for Hira Trading: Egil Jensen AS faktura 245458. Ikke bokfør.»
+
+Claude finner bilaget i innboksen, lager konteringsforslaget og kaller `fiken_create_purchase_draft`. Utkastet dukker opp under **Kjøp** i Fiken (salg under **Salg**) med leverandør, dato, fakturanummer, forfall, linjer, mva og vedlagt bilag. Du åpner det, kontrollerer og trykker selv på «Bokfør».
+
+Viktig om feltene:
+
+- Beløp er heltall i øre. Hver linje har `net_ore` og `gross_ore`. Fradrag, gebyr og øreavrunding kan være negative linjer.
+- `vat_type` bruker Fikens navn: `HIGH` (25 %), `MEDIUM` (15 %), `LOW` (12 %), `NONE`, `EXEMPT`, `OUTSIDE` osv. Dette er ikke de numeriske kodene som `fiken_validate_posting_proposal` bruker.
+- `expected_gross_ore` er totalen på bilaget. Stemmer ikke linjene med totalen, lagres ingenting.
+- Betalt bilag: `paid=true` og `payments` med dato, betalingskonto (f.eks. `1920:10001`) og beløp. Kontantkjøp: `cash=true`.
+- Mulig duplikat stopper lagringen. `allow_duplicate=true` brukes bare når du har bekreftet at det ikke er et duplikat.
+- Fiken kontrollerer selv kontoer og kombinasjoner av konto og mva. Feilmeldingen fra Fiken vises til Claude, så forslaget kan rettes.
+- Foretaket må ha API-tilgang aktivert i Fiken.
+
+### Tillatelser i Claude
+
+Lesing og skriving er separate verktøy. Lesing er merket skrivebeskyttet og kan settes til **Always allow** i Claude. Verktøy som lager, endrer eller sletter utkast er merket som skrivende. La dem stå på **Allow once** hvis du vil godkjenne hvert utkast før det lagres.
+
+Hvis Claude spør om å bruke nettleseren på fiken.no for å lage utkast, kjører du en eldre versjon uten utkastverktøy. Oppdater (se under) og start Claude på nytt.
+
+### Oppdater til 0.4
+
+```bash
+git pull --ff-only
+.venv/bin/python -m pip install .
+```
+
+Windows:
+
+```powershell
+git pull --ff-only
+.\.venv\Scripts\python.exe -m pip install .
+```
+
+Avslutt Claude helt og åpne på nytt. Innloggingen beholdes.
 
 ## 1. Registrer Fiken-appen én gang
 
@@ -159,7 +206,7 @@ MCP-prompten `foresla_kontering` gir denne arbeidsflyten med `company_slug` og `
 - Resultatet skiller `arithmetic_valid`, `account_check`, `vat_check` og `duplicate_check`. Ukjente mva-koder blir `unresolved`. Gjenkjent kode er aldri en bekreftelse på fradragsrett eller sats. Bruk numeriske kjøps-mvakoder fra [Fiken-dokumentasjonen](https://api.fiken.no/api/v2/docs/), ikke `vatType`-navn som `HIGH`. Kodene er kontrollert mot dokumentasjonen 28. oktober 2026.
 - Kontoplanen er for inneværende år. Historisk kontogyldighet kontrolleres ikke. Forslaget er alltid et manuelt utkast, ikke et payload for bokføring; separate mva-linjer må ikke sendes som en automatisk Fiken-postering.
 
-### Oppdater fra 0.2
+### Oppdater fra 0.2 til 0.3
 
 Kjør i klonen og start Claude på nytt:
 
@@ -174,7 +221,7 @@ OAuth-oppsettet er uendret. **Endret verktøyformat:** paginerte lister returner
 
 - OAuth er per OS-bruker og Client ID. Ingen personlig API-token eller client secret brukes.
 - Tilgangs- og refresh-token lagres samlet i systemets legitimasjonslager. Rotering og API-kall serialiseres mellom lokale prosesser med fillås. Bytte av Fiken-bruker gjøres med ny `login`.
-- Regnskaps-API-et har bare GET-transport. OAuth-tokenutveksling er eneste HTTP POST. Fiken-tillatelsen kan være bredere enn lesetilgangen serveren tilbyr; sperren ligger i denne klienten.
+- Lesing bruker GET. Skriving er begrenset til en hviteliste: `POST`/`PUT`/`DELETE` på `companies/{foretak}/purchases/drafts` og `…/sales/drafts`, og vedlegg på utkast. Endepunktene som gjør utkast om til bokført kjøp eller salg (`createPurchase`, `createSale`), og alle andre skrivestier, avvises lokalt. Fiken-tillatelsen er bredere enn dette; sperren ligger i denne klienten. `FIKEN_READ_ONLY=1` slår av all skriving.
 - Nedlasting godtar bare HTTPS på `fiken.no` og `api.fiken.no`, uten omdirigeringer. Ukjente dokumentverter avvises.
 - Bilag lagres ikke på disk av serveren. Bilag og regnskapsdata som Claude leser sendes til Claude og omfattes av brukerens Claude-avtale. Det er ingen ekstra AI-tjeneste eller analyse-API i denne serveren.
 - Dokumenttekst er ubetrodd innhold. Arbeidsflyten instruerer Claude om å ignorere instruksjoner i bilag, men menneskelig kontroll er fortsatt nødvendig.
@@ -196,7 +243,7 @@ OAuth-oppsettet er uendret. **Endret verktøyformat:** paginerte lister returner
 .venv/bin/python -m pytest -q
 ```
 
-Tester dekker PKCE, refresh-rotasjon, offentlig OAuth-klient, GET-sperre, omdirigeringer, adresseregler, bilagslesing, datoer, sidegrenser, kontoplan på senere sider, ukjente mva-koder, duplikater og en virkelig MCP-stdio-oppstart. Alle regnskapsscenarier i testene er syntetiske; de dokumenterer ikke kvaliteten på Claudes tolkning av reelle bilag. GitHub Actions kjører på macOS og Windows med Python 3.11–3.13.
+Tester dekker PKCE, refresh-rotasjon, offentlig OAuth-klient, skrivesperre utenfor utkast, utkastfelt og duplikatstopp, omdirigeringer, adresseregler, bilagslesing, datoer, sidegrenser, kontoplan på senere sider, ukjente mva-koder, duplikater og en virkelig MCP-stdio-oppstart. Alle regnskapsscenarier i testene er syntetiske; de dokumenterer ikke kvaliteten på Claudes tolkning av reelle bilag. GitHub Actions kjører på macOS og Windows med Python 3.11–3.13.
 
 **Gjenstår før reell pilotgodkjenning:** registrer Fiken-appen, prøv innlogging og refresh med en testbruker, kontroller PDF/EHF mot testforetak, og prøv installasjonen i Claude Desktop. Ingen slike live-kontroller er dokumentert som bestått ennå. Repoet er en installerbar pilot, ikke en produksjonsgodkjent integrasjon.
 

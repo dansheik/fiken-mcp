@@ -1,7 +1,7 @@
 [project]
 name = "fiken-mcp"
-version = "0.3.1"
-description = "Local read-only Fiken MCP for Claude on macOS and Windows, with OAuth PKCE"
+version = "0.4.0"
+description = "Local Fiken MCP for Claude on macOS and Windows: read, and save purchase/sale drafts (never books). OAuth PKCE"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

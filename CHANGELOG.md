@@ -1,5 +1,19 @@
 # Endringslogg
 
+## 0.4.0 – 2026-11-02
+
+- Nye skriveverktøy, bare for utkast: `fiken_create_purchase_draft`, `fiken_create_sale_draft`,
+  `fiken_update_purchase_draft`, `fiken_update_sale_draft`, `fiken_attach_inbox_document_to_draft`,
+  `fiken_delete_purchase_draft` og `fiken_delete_sale_draft`.
+- Nye leseverktøy: `fiken_list_sale_drafts` og `fiken_get_sale_draft`.
+- Skrivetransporten har en hviteliste for utkast-stier. Bokføring (`createPurchase`/`createSale`)
+  og all annen skriving avvises før forespørselen sendes.
+- Lokal kontroll før lagring: linjesum mot bilagets total, mva-frie linjer, betalinger, forfall
+  og mulige duplikater blant utkast og bokførte kjøp/salg.
+- Innboksbilag legges ved utkastet. Godtar ikke Fiken direkte kobling, lastes en kopi opp.
+- Serverinstruksjonene ber Claude bruke utkastverktøyene i stedet for nettleseren.
+- `FIKEN_READ_ONLY=1` gir den gamle skrivebeskyttede oppførselen.
+
 ## 0.3.1 – 2026-10-30
 
 - Windows-støtte med Credential Manager, plattformuavhengig prosesslås og riktig `.exe` i Claude-konfigurasjon.
