@@ -1,5 +1,9 @@
 # Endringslogg
 
+## Uutgitt
+
+- PowerShell-kommandoene i WINDOWS.md og README står på én linje skilt med `;`, så de virker også når linjeskift forsvinner ved innliming.
+
 ## 0.4.0 – 2026-11-02
 
 - Nye skriveverktøy, bare for utkast: `fiken_create_purchase_draft`, `fiken_create_sale_draft`,

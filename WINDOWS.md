@@ -29,8 +29,7 @@ Gjør stegene i rekkefølge. Hvert steg gjøres bare én gang per PC.
 Lim inn disse to linjene i PowerShell:
 
 ```powershell
-winget install -e --id Python.Python.3.12 --accept-source-agreements --accept-package-agreements
-winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements
+winget install -e --id Python.Python.3.12 --accept-source-agreements --accept-package-agreements; winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements
 ```
 
 Spør Windows «Vil du tillate at denne appen gjør endringer?», klikker du **Ja**. Når begge er ferdige: **lukk PowerShell-vinduet og åpne et nytt**. Ellers finner ikke PC-en programmene.
@@ -40,11 +39,7 @@ Spør Windows «Vil du tillate at denne appen gjør endringer?», klikker du **J
 Lim inn i det nye PowerShell-vinduet:
 
 ```powershell
-cd $HOME
-git clone https://github.com/dansheik/fiken-mcp.git
-cd fiken-mcp
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install .
+cd $HOME; git clone https://github.com/dansheik/fiken-mcp.git; cd fiken-mcp; py -3.12 -m venv .venv; .\.venv\Scripts\python.exe -m pip install .
 ```
 
 Dette tar et par minutter. Det er normalt at mye tekst ruller forbi.
@@ -54,9 +49,7 @@ Dette tar et par minutter. Det er normalt at mye tekst ruller forbi.
 Kopier linjene under inn i Notisblokk først. Bytt ut `LIM-INN-KLIENT-ID-HER` med klient-ID-en du har fått. Behold de enkle anførselstegnene. Kopier så alt inn i PowerShell:
 
 ```powershell
-cd $HOME\fiken-mcp
-$env:FIKEN_CLIENT_ID = 'LIM-INN-KLIENT-ID-HER'
-.\.venv\Scripts\fiken-mcp.exe login
+cd $HOME\fiken-mcp; $env:FIKEN_CLIENT_ID = 'LIM-INN-KLIENT-ID-HER'; .\.venv\Scripts\fiken-mcp.exe login
 ```
 
 Nettleseren åpner Fiken. Logg inn, kryss av for foretakene du jobber med, og godkjenn. Du har tre minutter på deg. Når nettleseren sier at innloggingen er fullført, går du tilbake til PowerShell.
@@ -74,8 +67,7 @@ Du skal se `"status": "ok"`.
 Bruk **samme PowerShell-vindu** som i steg 3. Lim inn:
 
 ```powershell
-[Console]::OutputEncoding = [Text.Encoding]::UTF8; $env:PYTHONUTF8 = '1'
-.\.venv\Scripts\fiken-mcp.exe config | Set-Clipboard
+[Console]::OutputEncoding = [Text.Encoding]::UTF8; $env:PYTHONUTF8 = '1'; .\.venv\Scripts\fiken-mcp.exe config | Set-Clipboard
 ```
 
 Nå ligger innstillingene for Claude i utklippstavlen. Gjør så dette:
@@ -103,9 +95,7 @@ Gjør dette når du får beskjed om at det finnes en ny versjon. Du trenger ikke
 Åpne PowerShell og lim inn:
 
 ```powershell
-cd $HOME\fiken-mcp
-git pull
-.\.venv\Scripts\python.exe -m pip install .
+cd $HOME\fiken-mcp; git pull; .\.venv\Scripts\python.exe -m pip install .
 ```
 
 Avslutt deretter Claude helt og åpne det igjen, som i steg 5.
@@ -136,6 +126,7 @@ Spør Claude om å bruke **nettleseren** på fiken.no, klikker du **Deny**. Da k
 | Du ser | Gjør dette |
 | --- | --- |
 | `winget`, `git` eller `py` «is not recognized» | Lukk PowerShell og åpne et nytt vindu. Hjelper ikke det, gjør steg 1 på nytt og start PC-en på nytt. |
+| «A positional parameter cannot be found» | Kommandoen ble limt inn på feil måte. Kopier hele den grå linjen på nytt og lim den inn som den er. |
 | «fiken-mcp.exe is not recognized» eller «cannot find path» | Du står i feil mappe. Lim inn `cd $HOME\fiken-mcp` og prøv igjen. |
 | «destination path 'fiken-mcp' already exists» | Koblingen er allerede lastet ned. Hopp over steg 2. |
 | «Sett FIKEN_CLIENT_ID til ID-en …» | Klient-ID-en mangler i dette vinduet. Gjør steg 3 på nytt, og steg 4 i samme vindu. |

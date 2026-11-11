@@ -69,8 +69,7 @@ git pull --ff-only
 Windows:
 
 ```powershell
-git pull --ff-only
-.\.venv\Scripts\python.exe -m pip install .
+git pull --ff-only; .\.venv\Scripts\python.exe -m pip install .
 ```
 
 Avslutt Claude helt og åpne på nytt. Innloggingen beholdes.
@@ -126,14 +125,7 @@ export FIKEN_CLIENT_ID='DIN_OFFENTLIGE_CLIENT_ID'
 på prosjektmappen og kjør `git pull --ff-only` før installasjonen.
 
 ```powershell
-git clone https://github.com/dansheik/fiken-mcp.git
-cd fiken-mcp
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install .
-$env:FIKEN_CLIENT_ID = 'DIN_OFFENTLIGE_CLIENT_ID'
-.\.venv\Scripts\fiken-mcp.exe login
-.\.venv\Scripts\fiken-mcp.exe doctor
-.\.venv\Scripts\fiken-mcp.exe config
+git clone https://github.com/dansheik/fiken-mcp.git; cd fiken-mcp; py -3.12 -m venv .venv; .\.venv\Scripts\python.exe -m pip install .; $env:FIKEN_CLIENT_ID = 'DIN_OFFENTLIGE_CLIENT_ID'; .\.venv\Scripts\fiken-mcp.exe login; .\.venv\Scripts\fiken-mcp.exe doctor; .\.venv\Scripts\fiken-mcp.exe config
 ```
 
 Bruk en installert Python-versjon 3.11 eller nyere hvis `py -3.12` ikke finnes.
